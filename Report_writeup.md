@@ -22,7 +22,7 @@ The goals / steps of this project are the following:
 [image6]: ./output_images/detected_lines.jpg "Fitted polynomial lines"
 [image7]: ./output_images/search_for_lines.jpg "Searching for lines"
 [image8]: ./output_images/pipeline_image.jpg "Pipeline image"
-[video1]: ./project_video.mp4 "Video"
+[video1]: ./project_video_tracked.mp4 "Video"
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/571/view)
 
@@ -120,7 +120,8 @@ plotting the lines on the original images is implemented as part of the image pr
 
 ### 1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (wobbly lines are ok but no catastrophic failures that would cause the car to drive off the road!).
 
-Here's a [link to my video result](./project_video.mp4)
+Here's a the video output of my algorithm.
+![alt text][video1]
 
 ---
 

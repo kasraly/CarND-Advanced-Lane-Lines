@@ -94,7 +94,7 @@ def process_image(img):
     ## finding the line for the first time (or when lost confidence in previous lines)
     ## this will be called internally in the line class, no need to call it when actually
     ## processing the images to find lines
-    #left_lane_inds, right_lane_inds, out_img = lane_tracker.search_for_lanes(warped)
+    #left_lane_inds, right_lane_inds, out_img = lane_tracker.search_for_lines(warped)
     #left_fit = lane_tracker.left_fit
     #right_fit = lane_tracker.right_fit
 
@@ -123,7 +123,7 @@ def process_image(img):
     #out_img = cv2.addWeighted(out_img, 1, lines_img, 1, 0)
     
     # plotting the the lines found after searching the boundary of last line
-    left_lane_inds, right_lane_inds = lane_tracker.find_lanes(warped)
+    left_lane_inds, right_lane_inds = lane_tracker.find_lines(warped)
     left_fit = lane_tracker.left_fit
     right_fit = lane_tracker.right_fit
 
@@ -171,11 +171,11 @@ def process_image(img):
     cv2.fillPoly(lines_img, np.int_([left_line_pts]), (255, 255, 0))
     cv2.fillPoly(lines_img, np.int_([right_line_pts]), (255, 255, 0))
     out_img = cv2.addWeighted(out_img, 1, lines_img, 1, 0)
-
+    
     detected_lines = out_img
 
     # drawing the lines in the original road image          
-    y_eval = curve_y[img.shape[0]//2]
+    y_eval = curve_y[0]
 
     # Define conversions in x and y from pixels space to meters
     ym_per_pix = 20/500 # meters per pixel in y dimension
@@ -216,8 +216,8 @@ def process_image(img):
     
     color_img[40:360,920:1240,:] = cv2.resize(detected_lines,(320,320))
     
-    camera_x_offset = 0.1
-    lane_centre_drift = xm_per_pix * ((left_fitx[0] + right_fitx[0])/2 - img.shape[1]/2) - camera_x_offset
+    camera_x_offset = -0.07
+    lane_centre_drift = xm_per_pix * (img.shape[1]/2 - (left_fitx[0] + right_fitx[0])/2 ) - camera_x_offset
 
     if lane_tracker.lanes_valid == True:
         text_color = (0, 255, 0)
@@ -228,6 +228,12 @@ def process_image(img):
     cv2.putText(color_img, 'vehicle ' + str(round(lane_centre_drift*100)/100) + ' m from centre ', (50,150), cv2.FONT_HERSHEY_SIMPLEX, 1, text_color, thickness=2, lineType=cv2.LINE_AA)
 
     return color_img
+
+lane_tracker = line.Line(margin=60, minpix=200)
+img = cv2.cvtColor(cv2.imread('./test_images/test5.jpg'), cv2.COLOR_BGR2RGB)
+img = process_image(img)
+cv2.imwrite('./output_image.jpg', cv2.cvtColor(img,cv2.COLOR_RGB2BGR)) 
+
 
 images = glob.glob('./test_images/test*.jpg') + glob.glob('./test_images/straight_lines*.jpg')
 

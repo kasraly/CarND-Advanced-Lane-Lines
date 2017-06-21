@@ -4,7 +4,7 @@ import glob
 import pickle   
 
 # read and make a list of all calibration images
-images = glob.glob('./camera_cal/calibration*.jpg')
+images = glob.glob('./camera_cal/calibration*[!cal].jpg')
 
 obj_points = [] #real points
 img_points = [] #pixel location in image

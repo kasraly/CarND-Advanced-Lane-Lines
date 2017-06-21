@@ -4,32 +4,16 @@ import matplotlib.pyplot as plt
 
 # Define a class to receive the characteristics of each line detection
 class Line():
-    def __init__(self, margin=100, minpix=50, nwindows=12, ym_per_pix=20/500, xm_per_pix=3.7/600):
+    def __init__(self, margin=100, minpix=50, nwindows=12, ym_per_pix=12/200, xm_per_pix=3.7/540):
         # was the line detected in the last iteration?
         self.lanes_valid = False  
-        # x values of the last n fits of the line
-        self.recent_xfitted = [] 
-        #average x values of the fitted line over the last n iterations
-        self.bestx = None     
-        #polynomial coefficients averaged over the last n iterations
-        self.best_fit = None  
         #polynomial coefficients for the most recent fit
-        self.current_fit = [np.array([False])]  
         self.left_fit = None
         self.right_fit = None
+        #polynomial coefficients for the previous fit
         self.last_left_fit = None
         self.last_right_fit = None
-        #radius of curvature of the line in some units
-        self.radius_of_curvature = None 
-        #distance in meters of vehicle center from the line
-        self.line_base_pos = None 
-        #difference in fit coefficients between last and new fits
-        self.diffs = np.array([0,0,0], dtype='float') 
-        #x values for detected line pixels
-        self.allx = None  
-        #y values for detected line pixels
-        self.ally = None
-        # margin of search from previously found lanes
+        # margin of search for the lane pixels
         self.margin = margin
         # minimum number of pixels found to recenter window
         self.minpix = minpix
@@ -41,7 +25,7 @@ class Line():
 
 
 
-    def search_for_lanes(self, img):
+    def search_for_lines(self, img):
         # Take a histogram of the bottom half of the image
         histogram = np.sum(img[img.shape[0]//2:,:], axis=0)
         # Find the peak of the left and right halves of the histogram
@@ -120,15 +104,12 @@ class Line():
         return left_lane_inds, right_lane_inds, out_img
 
 
-    def find_lanes(self, img):
+    def find_lines(self, img):
         if self.lanes_valid==False:
-            self.search_for_lanes(img)
-            left_fit = self.left_fit
-            right_fit = self.right_fit
-        else:
-            left_fit = self.last_left_fit
-            right_fit = self.last_right_fit
+            self.search_for_lines(img)
 
+        left_fit = self.left_fit
+        right_fit = self.right_fit
 
         margin = self.margin
         nonzero = img.nonzero()
@@ -147,27 +128,25 @@ class Line():
         # Fit a second order polynomial to each
         left_fit_new = np.polyfit(lefty, leftx, 2)
         right_fit_new = np.polyfit(righty, rightx, 2)
+        
+        left_fit_cr = self.xm_per_pix*np.divide(left_fit_new,np.array([self.ym_per_pix**2,self.ym_per_pix,1]))
+        right_fit_cr = self.xm_per_pix*np.divide(right_fit_new,np.array([self.ym_per_pix**2,self.ym_per_pix,1]))
+        # Calculate the new radii of curvature
+        y_eval = 0
+        left_curverad = ((1 + (2*left_fit_cr[0]*y_eval + left_fit_cr[1])**2)**1.5) / np.absolute(2*left_fit_cr[0]) * np.sign(left_fit_cr[0])
+        right_curverad = ((1 + (2*right_fit_cr[0]*y_eval + right_fit_cr[1])**2)**1.5) / np.absolute(2*right_fit_cr[0]) * np.sign(right_fit_cr[0])
+
+        if abs(500/left_curverad - 500/right_curverad) > 1:
+            self.lanes_valid = False
+        elif left_fit[2] > img.shape[1]/2 or right_fit[2] < img.shape[1]/2:
+            self.lanes_valid = False
+        else:
+            self.lanes_valid = True
+
         alpha = 0.2
         left_fit = left_fit + alpha * (left_fit_new-left_fit)
         right_fit = right_fit + alpha * (right_fit_new-right_fit)
         self.left_fit = left_fit
         self.right_fit = right_fit
         
-        left_fit_cr = self.xm_per_pix*np.divide(left_fit,np.array([self.ym_per_pix**2,self.ym_per_pix,1]))
-        right_fit_cr = self.xm_per_pix*np.divide(right_fit,np.array([self.ym_per_pix**2,self.ym_per_pix,1]))
-        # Calculate the new radii of curvature
-        y_eval = 0;
-        left_curverad = ((1 + (2*left_fit_cr[0]*y_eval + left_fit_cr[1])**2)**1.5) / np.absolute(2*left_fit_cr[0]) * np.sign(left_fit_cr[0])
-        right_curverad = ((1 + (2*right_fit_cr[0]*y_eval + right_fit_cr[1])**2)**1.5) / np.absolute(2*right_fit_cr[0]) * np.sign(right_fit_cr[0])
-
-        if abs(1000/left_curverad - 1000/right_curverad) > 2:
-            self.lanes_valid = False
-        elif left_fit[2] > img.shape[1]/2 or right_fit[2] < img.shape[1]/2:
-            self.lanes_valid = False
-        else:
-            self.lanes_valid = True
-            self.last_left_fit = left_fit
-            self.last_right_fit = right_fit
-
-
         return left_lane_inds, right_lane_inds
